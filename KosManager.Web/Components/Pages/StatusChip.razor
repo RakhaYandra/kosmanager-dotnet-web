@@ -1,0 +1,7 @@
+<MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color">@StatusLabel</MudChip>
+
+@code {
+    [Parameter] public string Status { get; set; } = "";
+    private string StatusLabel => Status switch { "paid" => "Lunas", "pending" => "Pending", _ => "Belum" };
+    private Color Color => Status switch { "paid" => Color.Success, "pending" => Color.Warning, _ => Color.Default };
+}

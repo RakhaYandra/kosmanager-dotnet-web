@@ -1,0 +1,82 @@
+@page "/bills"
+@inject ApiClient Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+@inject ISnackbar Snack
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Tagihan — kosmanager</PageTitle>
+
+@if (!ready)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <div class="d-flex align-center gap-3 mb-4">
+        <MudText Typo="Typo.h4" Style="font-weight:700;">Tagihan</MudText>
+        <MudSpacer />
+        @if (Auth.IsOwner)
+        {
+            <MudTextField T="string" Label="Periode" Placeholder="2026-10" @bind-Value="periode" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:140px" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Generate">Generate</MudButton>
+        }
+    </div>
+    <MudSelect T="string" Label="Status" Value="status" ValueChanged="OnStatus" Variant="Variant.Outlined" Dense="true" Style="width:200px" Class="mb-3">
+        <MudSelectItem Value="@("")">Semua</MudSelectItem>
+        <MudSelectItem Value="@("unpaid")">Belum</MudSelectItem>
+        <MudSelectItem Value="@("pending")">Pending</MudSelectItem>
+        <MudSelectItem Value="@("paid")">Lunas</MudSelectItem>
+    </MudSelect>
+    @if (!loaded) { <MudProgressCircular Indeterminate="true" /> }
+    else if (bills.Count == 0) { <MudAlert Severity="Severity.Success">Belum ada tunggakan 🎉</MudAlert> }
+    else
+    {
+        <MudTable Items="bills" Hover="true" Elevation="2" Context="r">
+            <HeaderContent>
+                <MudTh>Penghuni</MudTh><MudTh>Periode</MudTh><MudTh>Nominal</MudTh><MudTh>Jatuh tempo</MudTh><MudTh>Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@r.Tenant</MudTd>
+                <MudTd Class="mono">@r.Period</MudTd>
+                <MudTd Class="mono">Rp @r.Amount</MudTd>
+                <MudTd Class="mono">@r.Due</MudTd>
+                <MudTd><StatusChip Status="@r.Status" /></MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+}
+
+@code {
+    private bool ready;
+    private List<BillRow> bills = [];
+    private bool loaded;
+    private string status = "";
+    private string periode = DateTime.Now.ToString("yyyy-MM");
+    private static readonly System.Globalization.CultureInfo Id = new("id-ID");
+
+    private record BillRow(string Tenant, string Period, string Amount, string Due, string Status);
+
+    protected override async Task OnInitializedAsync() { await Auth.EnsureLoadedAsync(); if (!Auth.LoggedIn) { Nav.NavigateTo("/login"); return; } ready = true; if (true) await Load(); }
+
+    private async Task OnStatus(string v) { status = v; await Load(); }
+
+    private async Task Load()
+    {
+        var q = string.IsNullOrEmpty(status) ? "/api/bills" : $"/api/bills?status={status}";
+        var raw = await Api.Get<List<System.Text.Json.JsonElement>>(q) ?? [];
+        bills = raw.Select(b => new BillRow(
+            b.GetProperty("tenant").GetString()!,
+            b.GetProperty("period").GetString()!,
+            b.GetProperty("amount").GetDecimal().ToString("N0", Id),
+            b.GetProperty("dueDate").GetString()!,
+            b.GetProperty("status").GetString()!)).ToList();
+        loaded = true;
+    }
+
+    private async Task Generate()
+    {
+        try { await Api.Post<bool>($"/api/bills/generate?periode={periode}", new { }); Snack.Add("Tagihan digenerate.", Severity.Success); await Load(); }
+        catch (Exception ex) { Snack.Add(ex.Message, Severity.Error); }
+    }
+}

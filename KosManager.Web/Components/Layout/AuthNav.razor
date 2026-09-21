@@ -1,0 +1,30 @@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject AuthState Auth
+
+@if (Auth.LoggedIn)
+{
+    <MudDrawer Open="true" Variant="DrawerVariant.Mini" ClipMode="DrawerClipMode.Always" Elevation="1">
+        <MudNavMenu>
+            @if (Auth.IsOwner)
+            {
+                <MudNavLink Href="/" Icon="@Icons.Material.Filled.GridView">Board</MudNavLink>
+                <MudNavLink Href="/tenants" Icon="@Icons.Material.Filled.People">Penghuni</MudNavLink>
+                <MudNavLink Href="/bills" Icon="@Icons.Material.Filled.Receipt">Tagihan</MudNavLink>
+                <MudNavLink Href="/verify" Icon="@Icons.Material.Filled.FactCheck">Verifikasi</MudNavLink>
+                <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+            }
+            else
+            {
+                <MudNavLink Href="/my-bills" Icon="@Icons.Material.Filled.Receipt">Tagihanku</MudNavLink>
+            }
+        </MudNavMenu>
+    </MudDrawer>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        Auth.Changed += StateHasChanged;
+        await Auth.EnsureLoadedAsync();
+    }
+}

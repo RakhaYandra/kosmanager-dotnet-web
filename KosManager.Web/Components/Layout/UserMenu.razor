@@ -1,0 +1,19 @@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject AuthState Auth
+@inject NavigationManager Nav
+
+@if (Auth.LoggedIn)
+{
+    <MudText Typo="Typo.body2" Class="mr-3">@Auth.Email</MudText>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="Logout">Keluar</MudButton>
+}
+
+@code {
+    protected override async Task OnInitializedAsync() => await Auth.EnsureLoadedAsync();
+
+    private async Task Logout()
+    {
+        await Auth.ClearAsync();
+        Nav.NavigateTo("/login", forceLoad: true);
+    }
+}

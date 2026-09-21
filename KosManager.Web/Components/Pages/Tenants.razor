@@ -1,0 +1,39 @@
+@page "/tenants"
+@inject ApiClient Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Penghuni — kosmanager</PageTitle>
+
+@if (!ready)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudText Typo="Typo.h4" Style="font-weight:700;" Class="mb-4">Penghuni</MudText>
+    @if (tenants is null) { <MudProgressCircular Indeterminate="true" /> }
+    else
+    {
+        <MudTable Items="tenants" Hover="true" Elevation="2">
+            <HeaderContent><MudTh>Nama</MudTh><MudTh>HP</MudTh><MudTh>Kamar</MudTh><MudTh>Masuk</MudTh><MudTh>Telegram</MudTh></HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.GetProperty("name").GetString()</MudTd>
+                <MudTd Class="mono">@context.GetProperty("phone").GetString()</MudTd>
+                <MudTd>@(context.TryGetProperty("room", out var r) && r.ValueKind != System.Text.Json.JsonValueKind.Null ? r.GetProperty("number").GetString() : "—")</MudTd>
+                <MudTd Class="mono">@context.GetProperty("moveInDate").GetString()</MudTd>
+                <MudTd>@(context.TryGetProperty("telegramChatId", out var c) && c.ValueKind != System.Text.Json.JsonValueKind.Null ? "✓" : "—")</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+}
+
+@code {
+    private bool ready;
+    private List<System.Text.Json.JsonElement>? tenants;
+    protected override async Task OnInitializedAsync()
+    {
+        if (Auth.LoggedIn) tenants = await Api.Get<List<System.Text.Json.JsonElement>>("/api/tenants") ?? [];
+    }
+}

@@ -1,0 +1,39 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="Theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Style="background:#FDFDFD;color:#111827;border-bottom:1px solid #E5E7EB;">
+        <MudText Typo="Typo.h6" Style="font-family:Inter;font-weight:700;">kosmanager</MudText>
+        <MudSpacer />
+        <UserMenu />
+    </MudAppBar>
+    <AuthNav />
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private MudTheme Theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Background = "#FDFDFD",
+            Surface = "#FFFFFF",
+            Primary = "#111827",
+            Secondary = "#4ADE80",
+            Success = "#16a34a",
+            Warning = "#d97706",
+            Error = "#dc2626",
+            TextPrimary = "#111827",
+            TextSecondary = "#4B5563",
+        },
+        LayoutProperties = new LayoutProperties { DefaultBorderRadius = "8px" },
+    };
+}

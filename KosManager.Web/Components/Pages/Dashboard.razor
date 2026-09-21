@@ -1,0 +1,69 @@
+@page "/dashboard"
+@inject ApiClient Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+@inject ISnackbar Snack
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Dashboard — kosmanager</PageTitle>
+
+@if (!ready)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <div class="d-flex align-center gap-3 mb-4">
+        <MudText Typo="Typo.h4" Style="font-weight:700;">Dashboard</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="TestSend">Kirim test</MudButton>
+    </div>
+    @if (dash is null) { <MudProgressCircular Indeterminate="true" /> }
+    else
+    {
+        <MudGrid Spacing="3" Class="mb-4">
+            <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Okupansi</MudText><MudText Class="km-stat-num">@dash.Value.GetProperty("occupancy").GetProperty("filled").GetInt32()/@dash.Value.GetProperty("occupancy").GetProperty("total").GetInt32()</MudText></MudCard></MudItem>
+            <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Kas bulan ini</MudText><MudText Class="km-stat-num">Rp @dash.Value.GetProperty("kas").GetDecimal().ToString("N0", new System.Globalization.CultureInfo("id-ID"))</MudText></MudCard></MudItem>
+            <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Tunggakan</MudText><MudText Class="km-stat-num">Rp @dash.Value.GetProperty("tunggakan").GetDecimal().ToString("N0", new System.Globalization.CultureInfo("id-ID"))</MudText></MudCard></MudItem>
+            <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Reminder terkirim</MudText><MudText Class="km-stat-num">@dash.Value.GetProperty("reminders").GetInt32()</MudText></MudCard></MudItem>
+        </MudGrid>
+        <MudText Typo="Typo.h6" Class="mb-2">Tunggakan teratas</MudText>
+        <MudTable Items="Overdue()" Hover="true" Elevation="2">
+            <HeaderContent><MudTh>Penghuni</MudTh><MudTh>Nominal</MudTh><MudTh>Jatuh tempo</MudTh><MudTh>Telat</MudTh></HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.GetProperty("tenant").GetString()</MudTd>
+                <MudTd Class="mono">Rp @context.GetProperty("amount").GetDecimal().ToString("N0", new System.Globalization.CultureInfo("id-ID"))</MudTd>
+                <MudTd Class="mono">@context.GetProperty("dueDate").GetString()</MudTd>
+                <MudTd><MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">H+@context.GetProperty("daysLate").GetInt32()</MudChip></MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+}
+
+@code {
+    private bool ready;
+    private System.Text.Json.JsonElement? dash;
+    private string chatId = "12345";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.EnsureLoadedAsync();
+        if (!Auth.LoggedIn) { Nav.NavigateTo("/login"); return; }
+        ready = true;
+        dash = await Api.Get<System.Text.Json.JsonElement>("/api/dashboard");
+    }
+
+    private List<System.Text.Json.JsonElement> Overdue() =>
+        dash?.GetProperty("overdue").EnumerateArray().ToList() ?? [];
+
+    private async Task TestSend()
+    {
+        try
+        {
+            var r = await Api.Post<System.Text.Json.JsonElement>("/api/notify/test", new { chatId });
+            Snack.Add($"Terkirim via {r.GetProperty("channel").GetString()}.", Severity.Success);
+            dash = await Api.Get<System.Text.Json.JsonElement>("/api/dashboard");
+        }
+        catch (Exception ex) { Snack.Add(ex.Message, Severity.Error); }
+    }
+}

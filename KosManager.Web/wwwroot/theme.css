@@ -1,0 +1,25 @@
+/* KosManager — Synapse tokens: bg #FDFDFD, text #111827, muted #4B5563,
+   border #E5E7EB, accent #4ADE80, surface #BBF7D0, radius 8px, pill buttons. */
+:root {
+    --km-bg: #FDFDFD;
+    --km-text: #111827;
+    --km-muted: #4B5563;
+    --km-border: #E5E7EB;
+    --km-accent: #4ADE80;
+    --km-surface: #BBF7D0;
+}
+body { background: var(--km-bg); color: var(--km-text); font-family: "Space Grotesk", system-ui, sans-serif; }
+h1, h2, h3, h4, .mud-typography-h4, .mud-typography-h5, .mud-typography-h6 {
+    font-family: Inter, system-ui, sans-serif !important;
+}
+.mono, .mud-table-cell .mono { font-family: "JetBrains Mono", monospace !important; font-size: 12px; font-weight: 600; }
+.mud-card, .mud-paper { border-radius: 8px !important; }
+.mud-button-filled { border-radius: 9999px !important; }
+.km-hero-accent { color: var(--km-accent); }
+.km-brand-panel {
+    background: linear-gradient(135deg, #BBF7D0 0%, #4ADE80 55%, #22c55e 100%);
+    border-radius: 8px;
+}
+.km-stat-num { font-family: "JetBrains Mono", monospace; font-size: 28px; font-weight: 600; }
+.km-label { font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 600; letter-spacing: .08em; color: var(--km-muted); text-transform: uppercase; }
+a { color: var(--km-text); }

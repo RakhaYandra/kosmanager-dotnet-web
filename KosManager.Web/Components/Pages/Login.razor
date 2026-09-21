@@ -1,0 +1,58 @@
+@page "/login"
+@inject ApiClient Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+@inject ISnackbar Snack
+@rendermode InteractiveServer
+
+<PageTitle>Masuk — kosmanager</PageTitle>
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="6" Class="d-flex flex-column justify-center">
+        <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success" Size="Size.Small" Class="mb-4" Style="width:fit-content">KosManager · Single-kos</MudChip>
+        <MudText Typo="Typo.h3" Style="font-weight:700;line-height:1.1;">Kamar terpantau.<br />Tagihan <span class="km-hero-accent">terkirim.</span></MudText>
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-3">Satu API + MySQL lokal untuk kamar, penghuni, tagihan, dan reminder Telegram.</MudText>
+        <div class="d-flex gap-4 mt-6">
+            <div><MudText Typo="Typo.caption" Class="km-label">RBAC</MudText><MudText Typo="Typo.body2">Owner · Penghuni</MudText></div>
+            <div><MudText Typo="Typo.caption" Class="km-label">Reminder</MudText><MudText Typo="Typo.body2">H-3 · H-1 · H+1</MudText></div>
+            <div><MudText Typo="Typo.caption" Class="km-label">Channel</MudText><MudText Typo="Typo.body2">Telegram · Fonnte</MudText></div>
+        </div>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <div class="km-brand-panel pa-8">
+            <MudPaper Class="pa-6" Elevation="3">
+                <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight:600;">Masuk</MudText>
+                <MudTextField T="string" Label="Email" @bind-Value="email" Variant="Variant.Outlined" FullWidth="true" />
+                <MudTextField T="string" Label="Kata sandi" @bind-Value="password" InputType="InputType.Password" Variant="Variant.Outlined" FullWidth="true" Class="mt-3" />
+                @if (error is not null)
+                {
+                    <MudAlert Severity="Severity.Error" Class="mt-3">@error</MudAlert>
+                }
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4" OnClick="DoLogin" Disabled="busy">
+                    @(busy ? "Memproses..." : "Masuk")
+                </MudButton>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-3">Demo fiktif — owner@kos.local / sinta@kos.local</MudText>
+            </MudPaper>
+        </div>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string email = "";
+    private string password = "";
+    private string? error;
+    private bool busy;
+
+    private async Task DoLogin()
+    {
+        error = null; busy = true;
+        try
+        {
+            var (token, role) = await Api.LoginAsync(email, password);
+            await Auth.SetAsync(token, email, role);
+            Nav.NavigateTo(role == "owner" ? "/" : "/my-bills", forceLoad: true);
+        }
+        catch (Exception ex) { error = ex.Message; }
+        busy = false;
+    }
+}
