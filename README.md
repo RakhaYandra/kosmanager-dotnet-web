@@ -1,5 +1,9 @@
 # kosmanager-dotnet-web
 
+[![ci](https://github.com/RakhaYandra/kosmanager-dotnet-web/actions/workflows/ci.yml/badge.svg)](https://github.com/RakhaYandra/kosmanager-dotnet-web/actions)
+
+> Ekosistem: [api](https://github.com/RakhaYandra/kosmanager-dotnet) · [web](https://github.com/RakhaYandra/kosmanager-dotnet-web) · [docs](https://github.com/RakhaYandra/kosmanager-dotnet-docs/releases) · [qa](https://github.com/RakhaYandra/kosmanager-dotnet-qa) · [data](https://github.com/RakhaYandra/kosmanager-dotnet-data) · [ops](https://github.com/RakhaYandra/kosmanager-dotnet-ops)
+
 Web KosManager — **Blazor Server + MudBlazor**, bahasa desain Synapse (light, Inter + Space Grotesk + JetBrains Mono, radius 8px, tombol pill). Mengonsumsi REST API via HttpClient + JWT (session storage, tahan refresh). Full API coverage: 17/17 endpoint terpanggil dari UI.
 
 ## Layar

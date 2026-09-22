@@ -1,0 +1,11 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "8.0.x" }
+      - run: dotnet build KosManager.Web
+      - run: grep -rn "GetProperty\|PostAsJsonAsync\|GetFromJsonAsync" KosManager.Web/Components KosManager.Web/Services/Api.cs | grep -v "Services/FeatureServices" | grep -v "LoginAsync" && { echo "JSON plumbing outside Services/"; exit 1; } || echo "layers OK"
