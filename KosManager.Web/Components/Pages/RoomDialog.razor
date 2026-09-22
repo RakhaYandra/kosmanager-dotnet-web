@@ -1,0 +1,23 @@
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" Label="Nomor" @bind-Value="Number" Variant="Variant.Outlined" FullWidth="true" />
+        <MudTextField T="string" Label="Tipe" @bind-Value="Type" Variant="Variant.Outlined" FullWidth="true" Class="mt-3" />
+        <MudNumericField T="decimal" Label="Harga/bulan" @bind-Value="Price" Variant="Variant.Outlined" FullWidth="true" Class="mt-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Batal</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Simpan</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = null!;
+    [Parameter] public string Number { get; set; } = "";
+    [Parameter] public string Type { get; set; } = "standar";
+    [Parameter] public decimal Price { get; set; }
+
+    private void Save() => Dialog.Close(DialogResult.Ok((Number, Type, Price)));
+    private void Cancel() => Dialog.Cancel();
+}

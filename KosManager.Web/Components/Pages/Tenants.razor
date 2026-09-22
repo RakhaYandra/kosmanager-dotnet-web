@@ -2,6 +2,8 @@
 @inject TenantService TenantSvc
 @inject AuthState Auth
 @inject NavigationManager Nav
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Penghuni — kosmanager</PageTitle>
@@ -12,15 +14,26 @@
 }
 else
 {
-    <MudText Typo="Typo.h4" Style="font-weight:700;" Class="mb-4">Penghuni</MudText>
+    <div class="d-flex align-center gap-3 mb-4">
+        <MudText Typo="Typo.h4" Style="font-weight:700;">Penghuni</MudText>
+        <MudSpacer />
+        <MudFileUpload T="IBrowserFile" FilesChanged="ImportCsv" Accept=".csv">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary">Import CSV</MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Add">Tambah</MudButton>
+    </div>
+    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">Format CSV: nama,no-hp,YYYY-MM-DD per baris.</MudText>
     <MudTable Items="tenants" Hover="true" Elevation="2" Context="t">
-        <HeaderContent><MudTh>Nama</MudTh><MudTh>HP</MudTh><MudTh>Kamar</MudTh><MudTh>Masuk</MudTh><MudTh>Telegram</MudTh></HeaderContent>
+        <HeaderContent><MudTh>Nama</MudTh><MudTh>HP</MudTh><MudTh>Kamar</MudTh><MudTh>Masuk</MudTh><MudTh>Telegram</MudTh><MudTh></MudTh></HeaderContent>
         <RowTemplate>
             <MudTd>@t.Name</MudTd>
             <MudTd Class="mono">@t.Phone</MudTd>
             <MudTd>@t.Room</MudTd>
             <MudTd Class="mono">@t.MoveIn</MudTd>
             <MudTd>@(t.HasTelegram ? "✓" : "—")</MudTd>
+            <MudTd><MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => Delete(t.Id))" aria-label="Hapus" /></MudTd>
         </RowTemplate>
     </MudTable>
 }
@@ -33,7 +46,31 @@ else
     {
         await Auth.EnsureLoadedAsync();
         if (!Auth.LoggedIn) { Nav.NavigateTo("/login"); return; }
-        tenants = await TenantSvc.ListAsync();
+        await Load();
         ready = true;
+    }
+
+    private async Task Load() => tenants = await TenantSvc.ListAsync();
+
+    private async Task Add()
+    {
+        var d = await Dialogs.ShowAsync<TenantDialog>("Tambah penghuni");
+        var r = await d.Result;
+        if (r is { Canceled: false, Data: ValueTuple<string, string, string> v })
+            await Snack.Try(async () => { await TenantSvc.CreateAsync(v.Item1, v.Item2, v.Item3); await Load(); return "Penghuni ditambah."; }, Snackbar);
+    }
+
+    private Task Delete(int id) =>
+        Snack.Try(async () => { await TenantSvc.DeleteAsync(id); await Load(); return "Penghuni dihapus."; }, Snackbar);
+
+    private async Task ImportCsv(IBrowserFile file)
+    {
+        await Snack.Try(async () =>
+        {
+            await using var stream = file.OpenReadStream(2 * 1024 * 1024);
+            var (imported, failed) = await TenantSvc.ImportAsync(stream, file.Name);
+            await Load();
+            return $"Import: {imported} ok, {failed} gagal.";
+        }, Snackbar);
     }
 }

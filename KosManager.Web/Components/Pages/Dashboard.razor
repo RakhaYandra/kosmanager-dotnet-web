@@ -3,6 +3,7 @@
 @inject AuthState Auth
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Dashboard — kosmanager</PageTitle>
@@ -16,6 +17,7 @@ else
     <div class="d-flex align-center gap-3 mb-4">
         <MudText Typo="Typo.h4" Style="font-weight:700;">Dashboard</MudText>
         <MudSpacer />
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="DownloadCsv">Unduh CSV</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="TestSend">Kirim test</MudButton>
     </div>
     @if (dash is null) { <MudProgressCircular Indeterminate="true" /> }
@@ -59,5 +61,14 @@ else
             var ch = await DashSvc.TestSendAsync(chatId);
             dash = await DashSvc.GetAsync();
             return $"Terkirim via {ch}.";
+        }, Snackbar);
+
+    private Task DownloadCsv() =>
+        Snack.Try(async () =>
+        {
+            var bytes = await DashSvc.ReportCsvAsync();
+            var b64 = Convert.ToBase64String(bytes);
+            await JS.InvokeVoidAsync("kmDownload", "rekap.csv", b64);
+            return "CSV diunduh.";
         }, Snackbar);
 }

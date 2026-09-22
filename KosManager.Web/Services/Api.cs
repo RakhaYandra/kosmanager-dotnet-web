@@ -70,7 +70,22 @@ public class ApiClient(IHttpClientFactory f, AuthState auth)
         return (doc["token"], meDoc.GetProperty("role").GetString()!);
     }
 
+    public async Task<(string Token, string Role)> RegisterAsync(string email, string password)
+    {
+        var c = f.CreateClient("api");
+        var res = await c.PostAsJsonAsync("/api/auth/register", new { email, password });
+        if (!res.IsSuccessStatusCode)
+        {
+            var err = await res.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+            throw new Exception(err is not null && err.TryGetValue("error", out var m) ? m : "Pendaftaran gagal.");
+        }
+        return await LoginAsync(email, password);
+    }
+
     public Task<T?> Get<T>(string url) => Client().GetFromJsonAsync<T>(url);
+    public Task<HttpResponseMessage> PostRaw(string url, HttpContent content) =>
+        Client().PostAsync(url, content);
+    public Task<HttpResponseMessage> GetRaw(string url) => Client().GetAsync(url);
     public async Task<T?> Post<T>(string url, object body)
     {
         var res = await Client().PostAsJsonAsync(url, body);

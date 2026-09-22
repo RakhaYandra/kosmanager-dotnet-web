@@ -2,6 +2,8 @@
 @inject RoomService Rooms
 @inject AuthState Auth
 @inject NavigationManager Nav
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Board — kosmanager</PageTitle>
@@ -17,6 +19,7 @@ else
         <MudText Typo="Typo.h4" Style="font-weight:700;">Board Kamar</MudText>
         <MudSpacer />
         <MudChip T="string" Color="Color.Success" Variant="Variant.Filled">@rooms.Count(r => r.Tenant is not null)/@rooms.Count terisi</MudChip>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Add">Tambah</MudButton>
     </div>
     <MudGrid Spacing="3">
         @foreach (var r in rooms)
@@ -30,7 +33,11 @@ else
                         <MudChip T="string" Size="Size.Small" Color="@(full ? Color.Success : Color.Default)" Variant="Variant.Filled">@(full ? "Isi" : "Kosong")</MudChip>
                     </div>
                     <MudText Typo="Typo.body1" Class="mt-1">@(r.Tenant ?? "—")</MudText>
-                    <MudText Typo="Typo.caption" Class="mono">@r.Price / bln</MudText>
+                    <MudText Typo="Typo.caption" Class="mono">@Format.Rp(r.Price) / bln</MudText>
+                    <div class="d-flex gap-2 mt-2">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => Edit(r))" aria-label="Ubah" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => Delete(r.Id))" aria-label="Hapus" />
+                    </div>
                 </MudCard>
             </MudItem>
         }
@@ -46,7 +53,34 @@ else
         await Auth.EnsureLoadedAsync();
         if (!Auth.LoggedIn) { Nav.NavigateTo("/login"); return; }
         if (!Auth.IsOwner) { ready = true; return; }
-        rooms = await Rooms.ListAsync();
+        await Load();
         ready = true;
     }
+
+    private async Task Load() => rooms = await Rooms.ListAsync();
+
+    private async Task Add()
+    {
+        var d = await Dialogs.ShowAsync<RoomDialog>("Tambah kamar");
+        var r = await d.Result;
+        if (r is { Canceled: false, Data: ValueTuple<string, string, decimal> v })
+            await Snack.Try(async () => { await Rooms.CreateAsync(v.Item1, v.Item2, v.Item3); await Load(); return "Kamar ditambah."; }, Snackbar);
+    }
+
+    private async Task Edit(RoomDto r)
+    {
+        var p = new DialogParameters<RoomDialog>
+        {
+            { x => x.Number, r.Number },
+            { x => x.Type, r.Type },
+            { x => x.Price, r.Price },
+        };
+        var d = await Dialogs.ShowAsync<RoomDialog>("Ubah kamar", p);
+        var res = await d.Result;
+        if (res is { Canceled: false, Data: ValueTuple<string, string, decimal> v })
+            await Snack.Try(async () => { await Rooms.UpdateAsync(r.Id, v.Item1, v.Item2, v.Item3, r.Status); await Load(); return "Kamar diubah."; }, Snackbar);
+    }
+
+    private Task Delete(int id) =>
+        Snack.Try(async () => { await Rooms.DeleteAsync(id); await Load(); return "Kamar dihapus."; }, Snackbar);
 }

@@ -1,0 +1,51 @@
+@page "/register"
+@inject ApiClient Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Daftar — kosmanager</PageTitle>
+
+<MudGrid Spacing="4">
+    <MudItem xs="12" md="6" Class="d-flex flex-column justify-center">
+        <MudText Typo="Typo.h3" Style="font-weight:700;line-height:1.1;">Satu akun.<br />Semua <span class="km-hero-accent">tagihanmu.</span></MudText>
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-3">Daftar sebagai penghuni: lihat tagihan, bayar, pantau status verifikasi.</MudText>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <div class="km-brand-panel pa-8">
+            <MudPaper Class="pa-6" Elevation="3">
+                <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight:600;">Daftar</MudText>
+                <MudTextField T="string" Label="Email" @bind-Value="email" Variant="Variant.Outlined" FullWidth="true" />
+                <MudTextField T="string" Label="Kata sandi" @bind-Value="password" InputType="InputType.Password" Variant="Variant.Outlined" FullWidth="true" Class="mt-3" />
+                @if (error is not null)
+                {
+                    <MudAlert Severity="Severity.Error" Class="mt-3">@error</MudAlert>
+                }
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-4" OnClick="DoRegister" Disabled="busy">
+                    @(busy ? "Memproses..." : "Daftar")
+                </MudButton>
+                <MudLink Href="/login" Typo="Typo.caption" Class="mt-3">Sudah punya akun? Masuk</MudLink>
+            </MudPaper>
+        </div>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string email = "";
+    private string password = "";
+    private string? error;
+    private bool busy;
+
+    private async Task DoRegister()
+    {
+        error = null; busy = true;
+        try
+        {
+            var (token, role) = await Api.RegisterAsync(email, password);
+            await Auth.SetAsync(token, email, role);
+            Nav.NavigateTo("/my-bills", forceLoad: true);
+        }
+        catch (Exception ex) { error = ex.Message; }
+        busy = false;
+    }
+}

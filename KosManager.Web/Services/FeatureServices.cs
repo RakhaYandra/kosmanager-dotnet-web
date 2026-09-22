@@ -12,11 +12,19 @@ public class RoomService(ApiClient api)
             r.GetProperty("id").GetInt32(),
             r.GetProperty("number").GetString()!,
             r.GetProperty("type").GetString()!,
-            Format.Rp(r.GetProperty("monthlyPrice").GetDecimal()),
+            r.GetProperty("monthlyPrice").GetDecimal(),
             r.GetProperty("status").GetString()!,
             r.TryGetProperty("tenant", out var t) && t.ValueKind != JsonValueKind.Null ? t.GetString() : null
         )).ToList();
     }
+
+    public Task CreateAsync(string number, string type, decimal price) =>
+        api.Post<bool>("/api/rooms", new { number, type, monthlyPrice = price, status = "kosong" });
+
+    public Task UpdateAsync(int id, string number, string type, decimal price, string status) =>
+        api.Put($"/api/rooms/{id}", new { id, number, type, monthlyPrice = price, status });
+
+    public Task DeleteAsync(int id) => api.Delete($"/api/rooms/{id}");
 }
 
 public class TenantService(ApiClient api)
@@ -37,6 +45,21 @@ public class TenantService(ApiClient api)
                 t.GetProperty("moveInDate").GetString()!,
                 tg);
         }).ToList();
+    }
+
+    public Task CreateAsync(string name, string phone, string moveIn) =>
+        api.Post<bool>("/api/tenants", new { name, phone, moveInDate = moveIn });
+
+    public Task DeleteAsync(int id) => api.Delete($"/api/tenants/{id}");
+
+    public async Task<(int Imported, int Failed)> ImportAsync(Stream csv, string fileName)
+    {
+        using var content = new MultipartFormDataContent();
+        content.Add(new StreamContent(csv), "file", fileName);
+        var res = await api.PostRaw("/api/tenants/import", content);
+        res.EnsureSuccessStatusCode();
+        var doc = await res.Content.ReadFromJsonAsync<JsonElement>();
+        return (doc.GetProperty("imported").GetInt32(), doc.GetProperty("failed").GetInt32());
     }
 }
 
@@ -102,5 +125,12 @@ public class DashboardService(ApiClient api)
     {
         var r = await api.Post<JsonElement>("/api/notify/test", new { chatId });
         return r.GetProperty("channel").GetString()!;
+    }
+
+    public async Task<byte[]> ReportCsvAsync()
+    {
+        var res = await api.GetRaw("/api/dashboard/report.csv");
+        res.EnsureSuccessStatusCode();
+        return await res.Content.ReadAsByteArrayAsync();
     }
 }
