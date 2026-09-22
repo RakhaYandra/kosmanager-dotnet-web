@@ -22,12 +22,12 @@ else
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Generate">Generate</MudButton>
         }
     </div>
-    <MudSelect T="string" Label="Status" Value="status" ValueChanged="OnStatus" Variant="Variant.Outlined" Dense="true" Style="width:200px" Class="mb-3">
-        <MudSelectItem Value="@("")">Semua</MudSelectItem>
-        <MudSelectItem Value="@("unpaid")">Belum</MudSelectItem>
-        <MudSelectItem Value="@("pending")">Pending</MudSelectItem>
-        <MudSelectItem Value="@("paid")">Lunas</MudSelectItem>
-    </MudSelect>
+    <div class="d-flex gap-2 mb-4">
+        @foreach (var opt in FilterOptions)
+        {
+            <MudChip T="string" Variant="@(status == opt.Value ? Variant.Filled : Variant.Outlined)" Color="@(status == opt.Value ? Color.Primary : Color.Default)" OnClick="@(() => OnStatus(opt.Value))">@opt.Label</MudChip>
+        }
+    </div>
     @if (!loaded) { <MudProgressCircular Indeterminate="true" /> }
     else if (bills.Count == 0) { <MudAlert Severity="Severity.Success">Belum ada tunggakan 🎉</MudAlert> }
     else
@@ -52,6 +52,10 @@ else
     private List<BillRow> bills = [];
     private bool loaded;
     private string status = "";
+    private static readonly (string Value, string Label)[] FilterOptions =
+    [
+        ("", "Semua"), ("unpaid", "Belum"), ("pending", "Pending"), ("paid", "Lunas"),
+    ];
     private string periode = DateTime.Now.ToString("yyyy-MM");
 
     protected override async Task OnInitializedAsync()
