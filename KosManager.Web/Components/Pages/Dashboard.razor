@@ -1,8 +1,8 @@
 @page "/dashboard"
-@inject ApiClient Api
+@inject DashboardService DashSvc
 @inject AuthState Auth
 @inject NavigationManager Nav
-@inject ISnackbar Snack
+@inject ISnackbar Snackbar
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Dashboard — kosmanager</PageTitle>
@@ -22,19 +22,19 @@ else
     else
     {
         <MudGrid Spacing="3" Class="mb-4">
-            <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Okupansi</MudText><MudText Class="km-stat-num">@dash.Value.GetProperty("occupancy").GetProperty("filled").GetInt32()/@dash.Value.GetProperty("occupancy").GetProperty("total").GetInt32()</MudText></MudCard></MudItem>
-            <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Kas bulan ini</MudText><MudText Class="km-stat-num">Rp @dash.Value.GetProperty("kas").GetDecimal().ToString("N0", new System.Globalization.CultureInfo("id-ID"))</MudText></MudCard></MudItem>
-            <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Tunggakan</MudText><MudText Class="km-stat-num">Rp @dash.Value.GetProperty("tunggakan").GetDecimal().ToString("N0", new System.Globalization.CultureInfo("id-ID"))</MudText></MudCard></MudItem>
-            <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Reminder terkirim</MudText><MudText Class="km-stat-num">@dash.Value.GetProperty("reminders").GetInt32()</MudText></MudCard></MudItem>
+            <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Okupansi</MudText><MudText Class="km-stat-num">@dash.Occupancy</MudText></MudCard></MudItem>
+            <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Kas bulan ini</MudText><MudText Class="km-stat-num">@dash.Kas</MudText></MudCard></MudItem>
+            <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Tunggakan</MudText><MudText Class="km-stat-num">@dash.Tunggakan</MudText></MudCard></MudItem>
+            <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Reminder terkirim</MudText><MudText Class="km-stat-num">@dash.Reminders</MudText></MudCard></MudItem>
         </MudGrid>
         <MudText Typo="Typo.h6" Class="mb-2">Tunggakan teratas</MudText>
-        <MudTable Items="Overdue()" Hover="true" Elevation="2">
+        <MudTable Items="dash.Overdue" Hover="true" Elevation="2" Context="o">
             <HeaderContent><MudTh>Penghuni</MudTh><MudTh>Nominal</MudTh><MudTh>Jatuh tempo</MudTh><MudTh>Telat</MudTh></HeaderContent>
             <RowTemplate>
-                <MudTd>@context.GetProperty("tenant").GetString()</MudTd>
-                <MudTd Class="mono">Rp @context.GetProperty("amount").GetDecimal().ToString("N0", new System.Globalization.CultureInfo("id-ID"))</MudTd>
-                <MudTd Class="mono">@context.GetProperty("dueDate").GetString()</MudTd>
-                <MudTd><MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">H+@context.GetProperty("daysLate").GetInt32()</MudChip></MudTd>
+                <MudTd>@o.Tenant</MudTd>
+                <MudTd Class="mono">@o.Amount</MudTd>
+                <MudTd Class="mono">@o.Due</MudTd>
+                <MudTd><MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">H+@o.DaysLate</MudChip></MudTd>
             </RowTemplate>
         </MudTable>
     }
@@ -42,7 +42,7 @@ else
 
 @code {
     private bool ready;
-    private System.Text.Json.JsonElement? dash;
+    private DashboardDto? dash;
     private string chatId = "12345";
 
     protected override async Task OnInitializedAsync()
@@ -50,20 +50,14 @@ else
         await Auth.EnsureLoadedAsync();
         if (!Auth.LoggedIn) { Nav.NavigateTo("/login"); return; }
         ready = true;
-        dash = await Api.Get<System.Text.Json.JsonElement>("/api/dashboard");
+        dash = await DashSvc.GetAsync();
     }
 
-    private List<System.Text.Json.JsonElement> Overdue() =>
-        dash?.GetProperty("overdue").EnumerateArray().ToList() ?? [];
-
-    private async Task TestSend()
-    {
-        try
+    private Task TestSend() =>
+        Snack.Try(async () =>
         {
-            var r = await Api.Post<System.Text.Json.JsonElement>("/api/notify/test", new { chatId });
-            Snack.Add($"Terkirim via {r.GetProperty("channel").GetString()}.", Severity.Success);
-            dash = await Api.Get<System.Text.Json.JsonElement>("/api/dashboard");
-        }
-        catch (Exception ex) { Snack.Add(ex.Message, Severity.Error); }
-    }
+            var ch = await DashSvc.TestSendAsync(chatId);
+            dash = await DashSvc.GetAsync();
+            return $"Terkirim via {ch}.";
+        }, Snackbar);
 }

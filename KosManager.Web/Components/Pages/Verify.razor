@@ -1,8 +1,8 @@
 @page "/verify"
-@inject ApiClient Api
+@inject PaymentService Payments
 @inject AuthState Auth
 @inject NavigationManager Nav
-@inject ISnackbar Snack
+@inject ISnackbar Snackbar
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Verifikasi — kosmanager</PageTitle>
@@ -40,21 +40,22 @@ else
     private bool ready;
     private List<PayRow> queue = [];
     private bool loaded;
-    private record PayRow(int Id, string Name, string Meta);
 
-    protected override async Task OnInitializedAsync() { await Auth.EnsureLoadedAsync(); if (!Auth.LoggedIn) { Nav.NavigateTo("/login"); return; } ready = true; if (true) await Load(); }
-    private async Task Load()
+    protected override async Task OnInitializedAsync()
     {
-        var raw = await Api.Get<List<System.Text.Json.JsonElement>>("/api/payments/queue") ?? [];
-        queue = raw.Select(p => new PayRow(
-            p.GetProperty("id").GetInt32(),
-            p.GetProperty("bill").GetProperty("tenant").GetProperty("name").GetString()!,
-            p.GetProperty("method").GetString()! + " · " + p.GetProperty("createdAt").GetString()!)).ToList();
-        loaded = true;
+        await Auth.EnsureLoadedAsync();
+        if (!Auth.LoggedIn) { Nav.NavigateTo("/login"); return; }
+        ready = true;
+        await Load();
     }
-    private async Task Decide(int id, bool ok)
-    {
-        try { await Api.Post<bool>($"/api/payments/{id}/verify", new { approve = ok }); Snack.Add(ok ? "Lunas." : "Ditolak.", Severity.Success); await Load(); }
-        catch (Exception ex) { Snack.Add(ex.Message, Severity.Error); }
-    }
+
+    private async Task Load() { queue = await Payments.QueueAsync(); loaded = true; }
+
+    private Task Decide(int id, bool ok) =>
+        Snack.Try(async () =>
+        {
+            await Payments.DecideAsync(id, ok);
+            await Load();
+            return ok ? "Lunas." : "Ditolak.";
+        }, Snackbar);
 }

@@ -1,5 +1,5 @@
 @page "/"
-@inject ApiClient Api
+@inject RoomService Rooms
 @inject AuthState Auth
 @inject NavigationManager Nav
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
@@ -16,40 +16,29 @@ else
     <div class="d-flex align-center gap-3 mb-4">
         <MudText Typo="Typo.h4" Style="font-weight:700;">Board Kamar</MudText>
         <MudSpacer />
-        <MudChip T="string" Color="Color.Success" Variant="Variant.Filled">@filled/@total terisi</MudChip>
+        <MudChip T="string" Color="Color.Success" Variant="Variant.Filled">@rooms.Count(r => r.Tenant is not null)/@rooms.Count terisi</MudChip>
     </div>
-    @if (rooms is null)
-    {
-        <MudProgressCircular Indeterminate="true" />
-    }
-    else
-    {
-        <MudGrid Spacing="3">
-            @foreach (var r in rooms)
-            {
-                var num = r.GetProperty("number").GetString()!;
-                var tenant = r.TryGetProperty("tenant", out var t) && t.ValueKind != System.Text.Json.JsonValueKind.Null ? t.GetString() : null;
-                var price = r.GetProperty("monthlyPrice").GetDecimal();
-                var full = tenant is not null;
-                <MudItem xs="12" sm="6" md="4">
-                    <MudCard Elevation="2" Class="pa-4">
-                        <div class="d-flex align-center">
-                            <MudText Typo="Typo.h5" Style="font-weight:700;">@num</MudText>
-                            <MudSpacer />
-                            <MudChip T="string" Size="Size.Small" Color="@(full ? Color.Success : Color.Default)" Variant="Variant.Filled">@(full ? "Isi" : "Kosong")</MudChip>
-                        </div>
-                        <MudText Typo="Typo.body1" Class="mt-1">@(tenant ?? "—")</MudText>
-                        <MudText Typo="Typo.caption" Class="mono">Rp @price.ToString("N0", new System.Globalization.CultureInfo("id-ID")) / bln</MudText>
-                    </MudCard>
-                </MudItem>
-            }
-        </MudGrid>
-    }
+    <MudGrid Spacing="3">
+        @foreach (var r in rooms)
+        {
+            var full = r.Tenant is not null;
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2" Class="pa-4">
+                    <div class="d-flex align-center">
+                        <MudText Typo="Typo.h5" Style="font-weight:700;">@r.Number</MudText>
+                        <MudSpacer />
+                        <MudChip T="string" Size="Size.Small" Color="@(full ? Color.Success : Color.Default)" Variant="Variant.Filled">@(full ? "Isi" : "Kosong")</MudChip>
+                    </div>
+                    <MudText Typo="Typo.body1" Class="mt-1">@(r.Tenant ?? "—")</MudText>
+                    <MudText Typo="Typo.caption" Class="mono">@r.Price / bln</MudText>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
 }
 
 @code {
-    private List<System.Text.Json.JsonElement>? rooms;
-    private int filled, total;
+    private List<RoomDto> rooms = [];
     private bool ready;
 
     protected override async Task OnInitializedAsync()
@@ -57,9 +46,7 @@ else
         await Auth.EnsureLoadedAsync();
         if (!Auth.LoggedIn) { Nav.NavigateTo("/login"); return; }
         if (!Auth.IsOwner) { ready = true; return; }
-        rooms = await Api.Get<List<System.Text.Json.JsonElement>>("/api/rooms") ?? [];
-        total = rooms.Count;
-        filled = rooms.Count(r => r.TryGetProperty("tenant", out var t) && t.ValueKind != System.Text.Json.JsonValueKind.Null);
+        rooms = await Rooms.ListAsync();
         ready = true;
     }
 }
