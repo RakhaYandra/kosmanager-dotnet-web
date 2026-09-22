@@ -11,12 +11,14 @@
         <MudSpacer />
         <UserMenu />
     </MudAppBar>
-    <AuthNav />
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
-            @Body
-        </MudContainer>
-    </MudMainContent>
+    <div class="km-shell">
+        <AuthNav />
+        <main class="km-content">
+            <MudContainer MaxWidth="MaxWidth.Large" Class="py-6">
+                @Body
+            </MudContainer>
+        </main>
+    </div>
 </MudLayout>
 
 @code {

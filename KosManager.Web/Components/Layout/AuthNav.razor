@@ -1,9 +1,11 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject AuthState Auth
+@inject UiState Ui
+@implements IDisposable
 
 @if (Auth.LoggedIn)
 {
-    <MudDrawer Open="true" Variant="DrawerVariant.Mini" ClipMode="DrawerClipMode.Always" Elevation="1">
+    <div class="km-rail @(Ui.DrawerOpen ? "open" : "")">
         <MudNavMenu>
             @if (Auth.IsOwner)
             {
@@ -18,13 +20,20 @@
                 <MudNavLink Href="/my-bills" Icon="@Icons.Material.Filled.Receipt">Tagihanku</MudNavLink>
             }
         </MudNavMenu>
-    </MudDrawer>
+    </div>
 }
 
 @code {
     protected override async Task OnInitializedAsync()
     {
         Auth.Changed += StateHasChanged;
+        Ui.Changed += StateHasChanged;
         await Auth.EnsureLoadedAsync();
+    }
+
+    public void Dispose()
+    {
+        Auth.Changed -= StateHasChanged;
+        Ui.Changed -= StateHasChanged;
     }
 }

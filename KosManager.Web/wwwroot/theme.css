@@ -23,3 +23,20 @@ h1, h2, h3, h4, .mud-typography-h4, .mud-typography-h5, .mud-typography-h6 {
 .km-stat-num { font-family: "JetBrains Mono", monospace; font-size: 28px; font-weight: 600; }
 .km-label { font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 600; letter-spacing: .08em; color: var(--km-muted); text-transform: uppercase; }
 a { color: var(--km-text); }
+
+/* Layout shell: rail + konten berdampingan (pengganti MudDrawer). */
+.km-shell { display: flex; align-items: stretch; padding-top: 64px; }
+.km-content { flex: 1; min-width: 0; }
+.km-rail {
+    width: 60px;
+    flex: 0 0 60px;
+    border-right: 1px solid var(--km-border);
+    background: var(--km-bg);
+    padding: 12px 8px;
+    transition: width .2s ease, flex-basis .2s ease;
+    overflow: hidden;
+}
+.km-rail.open { width: 220px; flex-basis: 220px; }
+.km-rail .mud-nav-link { white-space: nowrap; border-radius: 8px; }
+.km-rail:not(.open) .mud-nav-link-text { display: none; }
+.km-rail:not(.open) .mud-nav-link { justify-content: center; padding-left: 0; padding-right: 0; }

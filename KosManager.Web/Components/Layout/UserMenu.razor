@@ -1,9 +1,11 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject AuthState Auth
+@inject UiState Ui
 @inject NavigationManager Nav
 
 @if (Auth.LoggedIn)
 {
+    <MudIconButton Icon="@Icons.Material.Filled.Menu" Size="Size.Small" OnClick="Ui.ToggleDrawer" aria-label="Menu" />
     <MudText Typo="Typo.body2" Class="mr-3">@Auth.Email</MudText>
     <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="Logout">Keluar</MudButton>
 }
