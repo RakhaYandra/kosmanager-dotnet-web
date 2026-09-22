@@ -4,6 +4,7 @@
 @inject AuthState Auth
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Tagihanku — kosmanager</PageTitle>
@@ -35,6 +36,10 @@ else
                         {
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-3" OnClick="@(() => Pay(b.Id))">SUDAH BAYAR</MudButton>
                         }
+                        else
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" Class="mt-3" OnClick="@(() => Receipt(b.Id))">Unduh Struk</MudButton>
+                        }
                     </MudCard>
                 </MudItem>
             }
@@ -63,5 +68,13 @@ else
             await Payments.PayAsync(billId);
             await Load();
             return "Tercatat, menunggu verifikasi owner.";
+        }, Snackbar);
+
+    private Task Receipt(int id) =>
+        Snack.Try(async () =>
+        {
+            var bytes = await Billing.ReceiptAsync(id);
+            await JS.InvokeVoidAsync("kmDownloadPdf", $"struk-{id}.pdf", Convert.ToBase64String(bytes));
+            return "Struk diunduh.";
         }, Snackbar);
 }

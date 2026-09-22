@@ -3,6 +3,7 @@
 @inject AuthState Auth
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Tagihan — kosmanager</PageTitle>
@@ -34,7 +35,7 @@ else
     {
         <MudTable Items="bills" Hover="true" Elevation="2" Context="r">
             <HeaderContent>
-                <MudTh>Penghuni</MudTh><MudTh>Periode</MudTh><MudTh>Nominal</MudTh><MudTh>Jatuh tempo</MudTh><MudTh>Status</MudTh>
+                <MudTh>Penghuni</MudTh><MudTh>Periode</MudTh><MudTh>Nominal</MudTh><MudTh>Jatuh tempo</MudTh><MudTh>Status</MudTh><MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd>@r.Tenant</MudTd>
@@ -42,6 +43,7 @@ else
                 <MudTd Class="mono">@r.Amount</MudTd>
                 <MudTd Class="mono">@r.Due</MudTd>
                 <MudTd><StatusChip Status="@r.Status" /></MudTd>
+                <MudTd><MudIconButton Icon="@Icons.Material.Filled.PictureAsPdf" Size="Size.Small" OnClick="@(() => Receipt(r.Id))" aria-label="Unduh struk" /></MudTd>
             </RowTemplate>
         </MudTable>
     }
@@ -75,5 +77,13 @@ else
             var n = await Billing.GenerateAsync(periode);
             await Load();
             return $"{n} tagihan digenerate.";
+        }, Snackbar);
+
+    private Task Receipt(int id) =>
+        Snack.Try(async () =>
+        {
+            var bytes = await Billing.ReceiptAsync(id);
+            await JS.InvokeVoidAsync("kmDownloadPdf", $"struk-{id}.pdf", Convert.ToBase64String(bytes));
+            return "Struk diunduh.";
         }, Snackbar);
 }

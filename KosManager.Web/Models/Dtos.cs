@@ -5,6 +5,7 @@ public record TenantDto(int Id, string Name, string Phone, string Room, string M
 public record BillRow(int Id, string Tenant, string Period, string Amount, string Due, string Status);
 public record PayRow(int Id, string Name, string Meta);
 public record OverdueDto(string Tenant, string Amount, string Due, int DaysLate);
+public record TrendPoint(string Period, decimal Kas, decimal Tunggakan);
 public record DashboardDto(string Occupancy, string Kas, string Tunggakan, List<OverdueDto> Overdue, int Reminders);
 
 public static class Format

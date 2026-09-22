@@ -29,6 +29,14 @@ else
             <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Tunggakan</MudText><MudText Class="km-stat-num">@dash.Tunggakan</MudText></MudCard></MudItem>
             <MudItem xs="6" md="3"><MudCard Class="pa-4"><MudText Class="km-label">Reminder terkirim</MudText><MudText Class="km-stat-num">@dash.Reminders</MudText></MudCard></MudItem>
         </MudGrid>
+        <MudText Typo="Typo.h6" Class="mb-2 mt-4">Kas 6 bulan terakhir</MudText>
+        <MudPaper Class="pa-4 mb-4" Elevation="2">
+            @if (BarSeries.Count == 0) { <MudProgressCircular Indeterminate="true" /> }
+            else
+            {
+                <MudChart ChartType="ChartType.Bar" ChartSeries="@BarSeries" XAxisLabels="@BarLabels" Width="100%" Height="280px" />
+            }
+        </MudPaper>
         <MudText Typo="Typo.h6" Class="mb-2">Tunggakan teratas</MudText>
         <MudTable Items="dash.Overdue" Hover="true" Elevation="2" Context="o">
             <HeaderContent><MudTh>Penghuni</MudTh><MudTh>Nominal</MudTh><MudTh>Jatuh tempo</MudTh><MudTh>Telat</MudTh></HeaderContent>
@@ -46,6 +54,8 @@ else
     private bool ready;
     private DashboardDto? dash;
     private string chatId = "12345";
+    private string[] BarLabels = [];
+    private List<ChartSeries> BarSeries = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -53,6 +63,13 @@ else
         if (!Auth.LoggedIn) { Nav.NavigateTo("/login"); return; }
         ready = true;
         dash = await DashSvc.GetAsync();
+        var t = await DashSvc.TrendAsync();
+        BarLabels = t.Select(x => x.Period[5..]).ToArray();
+        BarSeries =
+        [
+            new ChartSeries { Name = "Lunas", Data = t.Select(x => (double)x.Kas).ToArray() },
+            new ChartSeries { Name = "Tunggakan", Data = t.Select(x => (double)x.Tunggakan).ToArray() },
+        ];
     }
 
     private Task TestSend() =>

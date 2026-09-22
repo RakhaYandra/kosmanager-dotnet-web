@@ -83,6 +83,13 @@ public class BillingService(ApiClient api)
         var doc = await api.Post<JsonElement>($"/api/bills/generate?periode={periode}", new { });
         return doc.GetProperty("generated").GetInt32();
     }
+
+    public async Task<byte[]> ReceiptAsync(int id)
+    {
+        var res = await api.GetRaw($"/api/bills/{id}/receipt.pdf");
+        res.EnsureSuccessStatusCode();
+        return await res.Content.ReadAsByteArrayAsync();
+    }
 }
 
 public class PaymentService(ApiClient api)
@@ -132,5 +139,14 @@ public class DashboardService(ApiClient api)
         var res = await api.GetRaw("/api/dashboard/report.csv");
         res.EnsureSuccessStatusCode();
         return await res.Content.ReadAsByteArrayAsync();
+    }
+
+    public async Task<List<TrendPoint>> TrendAsync()
+    {
+        var raw = await api.Get<List<JsonElement>>("/api/dashboard/trend") ?? [];
+        return raw.Select(t => new TrendPoint(
+            t.GetProperty("period").GetString()!,
+            t.GetProperty("kas").GetDecimal(),
+            t.GetProperty("tunggakan").GetDecimal())).ToList();
     }
 }
