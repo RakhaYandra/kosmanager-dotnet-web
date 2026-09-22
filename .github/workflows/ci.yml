@@ -8,4 +8,4 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: "8.0.x" }
       - run: dotnet build KosManager.Web
-      - run: grep -rn "GetProperty\|PostAsJsonAsync\|GetFromJsonAsync" KosManager.Web/Components KosManager.Web/Services/Api.cs | grep -v "Services/FeatureServices" | grep -v "LoginAsync" && { echo "JSON plumbing outside Services/"; exit 1; } || echo "layers OK"
+      - run: grep -rn "GetProperty\|PostAsJsonAsync\|GetFromJsonAsync\|HttpClient" KosManager.Web/Components && { echo "JSON plumbing outside Services/"; exit 1; } || echo "layers OK"
