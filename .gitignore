@@ -1,5 +1,54 @@
+# Env & konfigurasi lokal
 .env
-*.user
+.env.*
+!.env.example
+appsettings.Development.json
+appsettings.Production.json
+appsettings.*.local.json
+
+# Build .NET
 bin/
 obj/
-appsettings.Development.json
+*.user
+*.suo
+*.userosscache
+.vs/
+.idea/
+.vscode/
+
+# Output publish & deploy config (web.config bisa bawa kredensial IIS)
+publish/
+webpub/
+web.config
+*.publishsettings
+*.pubxml.user
+
+# Report test
+TestResults/
+*.trx
+playwright-report/
+blob-report/
+coverage/
+coverage*.xml
+coverage*.json
+
+# Log & scratch
+*.log
+*.bak
+*.tmp
+*~
+
+# Kunci
+*.pfx
+*.p12
+*.key
+
+# Toolchain JS (defensif — repo ini Blazor, bukan Vite)
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
